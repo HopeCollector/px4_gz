@@ -1,3 +1,20 @@
+# px4_gz
+
+px4 在 ros2-gazebo 下的仿真配置与相关实现
+
+## 基本配置
+
+- px4 >= v1.14.0
+- gz garden (注意区分 gazebo classic 和 gazebo，这俩不是一个东西)
+- ros2 humble
+
+## 文件结构
+
+- `description` : 模型文件 urdf 或者 sdf
+- `gazebo` : gazebo 相关的代码和配置，一般都是些插件什么的 (暂时不需要)
+- `application` : ros2 相关的代码和配置
+- `bringup` : launch 文件与一些小工具
+
 # ros_gz_project_template
 A template project integrating ROS 2 and Gazebo simulator.
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(ros_gz_example_bringup)
+project(px4_gz_bringup)
 
 find_package(ament_cmake REQUIRED)
 

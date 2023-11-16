@@ -25,16 +25,16 @@
 #include <gz/plugin/Register.hh>
 
 // Don't forget to include the plugin's header.
-#include "ros_gz_example_gazebo/BasicSystem.hh"
+#include "px4_gz_gazebo/BasicSystem.hh"
 
 // This is required to register the plugin. Make sure the interfaces match
 // what's in the header.
 GZ_ADD_PLUGIN(
-    ros_gz_example_gazebo::BasicSystem,
+    px4_gz_gazebo::BasicSystem,
     gz::sim::System,
-    ros_gz_example_gazebo::BasicSystem::ISystemPostUpdate)
+    px4_gz_gazebo::BasicSystem::ISystemPostUpdate)
 
-namespace ros_gz_example_gazebo 
+namespace px4_gz_gazebo 
 {
 
 void BasicSystem::PostUpdate(const gz::sim::UpdateInfo &_info,
@@ -42,8 +42,8 @@ void BasicSystem::PostUpdate(const gz::sim::UpdateInfo &_info,
 {
   if (!_info.paused && _info.iterations % 1000 == 0)
   {
-    gzdbg << "ros_gz_example_gazebo::BasicSystem::PostUpdate" << std::endl;
+    gzdbg << "px4_gz_gazebo::BasicSystem::PostUpdate" << std::endl;
   }
 }
 
-}  // namespace ros_gz_example_gazeba
+}  // namespace px4_gz_gazeba
