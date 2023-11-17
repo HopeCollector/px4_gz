@@ -17,20 +17,18 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
-from launch.conditions import IfCondition
+from launch.actions import ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    PathJoinSubstitution,
+    PythonExpression,
+)
 
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    import subprocess
-
-    subprocess.check_output(["echo", "$GZ_SIM_RESOURCE_PATH"])
-
     # Configure ROS nodes for launch
 
     # Setup project paths
@@ -39,9 +37,18 @@ def generate_launch_description():
     pkg_project_description = get_package_share_directory("px4_gz_description")
     pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
 
+    # start px4 controller
+    cmd_px4 = ExecuteProcess(
+        cmd=[
+            "bash",
+            os.path.join(pkg_project_bringup, "config", "launch_px4.sh"),
+        ],
+        output="screen",
+    )
+
     # Load the SDF file from "description" package
     sdf_file = os.path.join(
-        pkg_project_description, "models", "x500_lidar", "model.sdf"
+        pkg_project_description, "models", "x500_lidar_desc", "model.sdf"
     )
     with open(sdf_file, "r") as infp:
         robot_desc = infp.read()
@@ -52,33 +59,33 @@ def generate_launch_description():
             os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
         ),
         launch_arguments={
-            "gz_args": PathJoinSubstitution(
-                [pkg_project_gazebo, "worlds", "px4_gz.sdf"]
+            "gz_args": PythonExpression(
+                [
+                    " '-r -s --headless-rendering ' + '", # running in headless mode
+                    # " '-r ' + '", # running in gui mode
+                    PathJoinSubstitution([pkg_project_gazebo, "worlds", "px4_gz.sdf"]),
+                    "'",
+                ]
             )
         }.items(),
     )
 
-    # Takes the description and joint angles as inputs and publishes the 3D poses of the robot links
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="both",
-        parameters=[
-            {"use_sim_time": True},
-            {"robot_description": robot_desc},
-        ],
-    )
-
-    # Visualize in RViz
-    rviz = Node(
-        package="rviz2",
-        executable="rviz2",
+    # tf static transform between lidar_link and gpu_lidar
+    tf_static_node = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        exec_name="tf_static_lidar",
         arguments=[
-            "-d",
-            os.path.join(pkg_project_bringup, "config", "diff_drive.rviz"),
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "x500_lidar/lidar_3d_v1/link",
+            "x500_lidar/lidar_3d_v1/link/gpu_lidar",
         ],
-        condition=IfCondition(LaunchConfiguration("rviz")),
+        output="screen",
     )
 
     # Bridge ROS topics and Gazebo messages for establishing communication
@@ -98,11 +105,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            gz_sim,
-            # DeclareLaunchArgument('rviz', default_value='true',
-            #                       description='Open RViz.'),
-            # bridge,
-            # robot_state_publisher,
-            # rviz
+            gz_sim, # simulator
+            cmd_px4,# px4 controller
+            bridge, # gz <-> ros2 bridge
+            tf_static_node, # lidar frame id translate
         ]
     )

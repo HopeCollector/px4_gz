@@ -1,0 +1,1 @@
+PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_NAME=x500_lidar /home/lawskiy/workspace/build/px4_sitl_default/bin/px4
