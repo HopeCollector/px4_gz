@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="lidar_3d_v2">
+    <link name="link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0.07121186 0 0 0</pose>
+        <mass>0.83</mass>
+        <inertia>
+          <ixx>0.002853261803275034</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.002853261803275034</iyy>
+          <iyz>0</iyz>
+          <izz>0.0029004988906384237</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <pose>0 0 0.07121186 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.08360116</radius>
+            <length>0.14242372</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>package://px4_gz_description/models/lidar_3d_v2/meshes/lidar_3d_v2.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <sensor name='gpu_lidar' type='gpu_lidar'>
+        <topic>lidar</topic>
+        <update_rate>10</update_rate>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-1.396263</min_angle>
+              <max_angle>1.396263</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>16</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.261799</min_angle>
+              <max_angle>0.261799</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.08</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+        <always_on>1</always_on>
+        <visualize>true</visualize>
+      </sensor>
+    </link>
+  </model>
+</sdf>
