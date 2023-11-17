@@ -1,16 +1,16 @@
 <sdf version='1.9'>
-  <world name='default'>
+  <world name='px4_gz'>
     <physics type="ode">
       <max_step_size>0.004</max_step_size>
       <real_time_factor>1.0</real_time_factor>
       <real_time_update_rate>250</real_time_update_rate>
     </physics>
-    <plugin name='gz::sim::systems::Physics' filename='gz-sim-physics-system'/>
-    <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system'/>
-    <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system'/>
-    <plugin name='gz::sim::systems::Contact' filename='gz-sim-contact-system'/>
-    <plugin name='gz::sim::systems::Imu' filename='gz-sim-imu-system'/>
-    <plugin name='gz::sim::systems::AirPressure' filename='gz-sim-air-pressure-system'/>
+    <plugin name='gz::sim::systems::Physics' filename='gz-sim-physics-system' />
+    <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system' />
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system' />
+    <plugin name='gz::sim::systems::Contact' filename='gz-sim-contact-system' />
+    <plugin name='gz::sim::systems::Imu' filename='gz-sim-imu-system' />
+    <plugin name='gz::sim::systems::AirPressure' filename='gz-sim-air-pressure-system' />
     <plugin name='gz::sim::systems::Sensors' filename='gz-sim-sensors-system'>
       <render_engine>ogre2</render_engine>
     </plugin>
@@ -37,8 +37,8 @@
           <property type='double' key='z'>1</property>
           <property type='string' key='state'>floating</property>
           <anchors target='3D View'>
-            <line own='left' target='left'/>
-            <line own='bottom' target='bottom'/>
+            <line own='left' target='left' />
+            <line own='bottom' target='bottom' />
           </anchors>
         </gz-gui>
         <play_pause>1</play_pause>
@@ -55,8 +55,8 @@
           <property type='double' key='z'>1</property>
           <property type='string' key='state'>floating</property>
           <anchors target='3D View'>
-            <line own='right' target='right'/>
-            <line own='bottom' target='bottom'/>
+            <line own='right' target='right' />
+            <line own='bottom' target='bottom' />
           </anchors>
         </gz-gui>
         <sim_time>1</sim_time>
@@ -64,11 +64,11 @@
         <real_time_factor>1</real_time_factor>
         <iterations>1</iterations>
       </plugin>
-      <plugin name='Entity tree' filename='EntityTree'/>
+      <plugin name='Entity tree' filename='EntityTree' />
     </gui>
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
-    <atmosphere type='adiabatic'/>
+    <atmosphere type='adiabatic' />
     <scene>
       <grid>false</grid>
       <ambient>0.4 0.4 0.4 1</ambient>
@@ -87,10 +87,10 @@
           </geometry>
           <surface>
             <friction>
-              <ode/>
+              <ode />
             </friction>
-            <bounce/>
-            <contact/>
+            <bounce />
+            <contact />
           </surface>
         </collision>
         <visual name='visual'>
@@ -148,25 +148,70 @@
       <pose>0 0 0.5 0 0 0</pose>
       <include merge="true">
         <uri>package://px4_gz_description/models/x500_lidar</uri>
+        <!-- <uri>x500</uri> -->
       </include>
-      <plugin
-        filename="gz-sim-joint-state-publisher-system"
-        name="gz::sim::systems::JointStatePublisher">
-      </plugin>
-      <plugin
-        filename="gz-sim-pose-publisher-system"
-        name="gz::sim::systems::PosePublisher">
-        <publish_link_pose>true</publish_link_pose>
-        <use_pose_vector_msg>true</use_pose_vector_msg>
-        <static_publisher>true</static_publisher>
-        <static_update_frequency>1</static_update_frequency>
-      </plugin>
-      <plugin
-        filename="gz-sim-odometry-publisher-system"
-        name="gz::sim::systems::OdometryPublisher">
-        <odom_frame>x500_lidar/odom</odom_frame>
-        <robot_base_frame>x500_lidar</robot_base_frame>
-      </plugin>
     </model>
+
+    <!-- trees -->
+    <include>
+      <name>pine_tree_1</name>
+      <uri>package://px4_gz_description/models/Pine tree</uri>
+      <pose>4 7 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>pine_tree_2</name>
+      <uri> package://px4_gz_description/models/Pine tree</uri>
+      <pose>6.1 7.6 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>pine_tree_3</name>
+      <uri> package://px4_gz_description/models/Pine tree</uri>
+      <pose>19.3 -14 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>pine_tree_4</name>
+      <uri> package://px4_gz_description/models/Pine tree</uri>
+      <pose>16 -11.5 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_1</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>10 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_2</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>10.25 -4.25 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_3</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>20.2 14.4 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_4</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>30 8.5 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_5</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>136.2 -0.4 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_6</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>38 -9.8 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_7</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>38.6 -4.6 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_8</name>
+      <uri>package://px4_gz_description/models/Oak tree</uri>
+      <pose>16 30 1.6 0.15 0 0</pose>
+    </include>
   </world>
 </sdf>
