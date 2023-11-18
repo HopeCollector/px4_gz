@@ -1,23 +1,18 @@
 ---
 - ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
+  gz_topic_name: "/world/px4_gz/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
-# - ros_topic_name: "/x500_lidar/odometry"
-#   gz_topic_name: "/model/x500_lidar/odometry"
-#   ros_type_name: "nav_msgs/msg/Odometry"
-#   gz_type_name: "gz.msgs.Odometry"
+- ros_topic_name: "/x500_lidar/odometry"
+  gz_topic_name: "/model/x500_lidar/odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
 - ros_topic_name: "/x500_lidar/point_cloud"
   gz_topic_name: "/lidar/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
   gz_type_name: "gz.msgs.PointCloudPacked"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
-  ros_type_name: "rosgraph_msgs/msg/clock"
-  gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
 - ros_topic_name: "/joint_states"
   gz_topic_name: "/world/px4_gz/model/x500_lidar/joint_state"

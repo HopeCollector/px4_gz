@@ -59,24 +59,6 @@ def generate_launch_description():
         }.items(),
     )
 
-    # tf static transform between lidar_link and gpu_lidar
-    tf_static_node = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        exec_name="tf_static_lidar",
-        arguments=[
-            "--x", "0",
-            "--y", "0",
-            "--z", "0",
-            "--roll", "0",
-            "--pitch", "0",
-            "--yaw", "0",
-            "--frame-id", "x500_lidar/link",
-            "--child-frame-id", "x500_lidar/link/gpu_lidar",
-        ],
-        output="screen",
-    )
-
     # Bridge ROS topics and Gazebo messages for establishing communication
     bridge = Node(
         package="ros_gz_bridge",
@@ -101,8 +83,9 @@ def generate_launch_description():
         composable_node_descriptions=[
             ComposableNode(
                 package="px4_gz_application",
-                plugin="px4_gz::rivz_mesh_loader",
-                name="rivz_mesh_loader",
+                plugin="px4_gz::visualization_helper",
+                name="visualization_helper",
+                parameters=[{"use_sim_time": True}],
             )
         ],
         output="screen",
@@ -111,9 +94,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             gz_sim,  # simulator
-            tf_static_node,  # lidar frame id translate
-            cmd_px4,  # px4 controller
             bridge,  # gz <-> ros2 bridge
-            container,
+            container, # visualization helper
+            cmd_px4,  # px4 controller
         ]
     )
