@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.actions import ExecuteProcess
@@ -24,44 +20,37 @@ from launch.substitutions import (
     PathJoinSubstitution,
     PythonExpression,
 )
-
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     # Configure ROS nodes for launch
 
     # Setup project paths
-    pkg_project_bringup = get_package_share_directory("px4_gz_bringup")
-    pkg_project_gazebo = get_package_share_directory("px4_gz_gazebo")
-    pkg_project_description = get_package_share_directory("px4_gz_description")
-    pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
+    pkg_project_bringup = FindPackageShare("px4_gz_bringup")
+    pkg_project_gazebo = FindPackageShare("px4_gz_gazebo")
+    pkg_project_description = FindPackageShare("px4_gz_description")
+    pkg_ros_gz_sim = FindPackageShare("ros_gz_sim")
 
     # start px4 controller
     cmd_px4 = ExecuteProcess(
         cmd=[
             "bash",
-            os.path.join(pkg_project_bringup, "config", "launch_px4.sh"),
+            PathJoinSubstitution([pkg_project_bringup, "config", "launch_px4.sh"]),
         ],
         output="screen",
     )
 
-    # Load the SDF file from "description" package
-    sdf_file = os.path.join(
-        pkg_project_description, "models", "x500_lidar_desc", "model.sdf"
-    )
-    with open(sdf_file, "r") as infp:
-        robot_desc = infp.read()
-
     # Setup to launch the simulator and Gazebo world
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
+            PathJoinSubstitution([pkg_ros_gz_sim, "launch", "gz_sim.launch.py"])
         ),
         launch_arguments={
             "gz_args": PythonExpression(
                 [
-                    " '-r -s --headless-rendering ' + '", # running in headless mode
+                    " '-r -s --headless-rendering ' + '",  # running in headless mode
                     # " '-r ' + '", # running in gui mode
                     PathJoinSubstitution([pkg_project_gazebo, "worlds", "px4_gz.sdf"]),
                     "'",
@@ -94,8 +83,8 @@ def generate_launch_description():
         executable="parameter_bridge",
         parameters=[
             {
-                "config_file": os.path.join(
-                    pkg_project_bringup, "config", "px4_gz_bridge.yaml"
+                "config_file": PathJoinSubstitution(
+                    [pkg_project_bringup, "config", "px4_gz_bridge.yaml"]
                 ),
                 "qos_overrides./tf_static.publisher.durability": "transient_local",
             }
@@ -105,9 +94,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            gz_sim, # simulator
-            cmd_px4,# px4 controller
-            bridge, # gz <-> ros2 bridge
-            tf_static_node, # lidar frame id translate
+            gz_sim,  # simulator
+            cmd_px4,  # px4 controller
+            bridge,  # gz <-> ros2 bridge
+            tf_static_node,  # lidar frame id translate
         ]
     )
