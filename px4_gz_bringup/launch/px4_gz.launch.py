@@ -13,14 +13,14 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.actions import ExecuteProcess
+from launch.actions import IncludeLaunchDescription, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     PathJoinSubstitution,
     PythonExpression,
 )
-from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -92,11 +92,28 @@ def generate_launch_description():
         output="screen",
     )
 
+    # container for mesh loader
+    container = ComposableNodeContainer(
+        name="px4_gz",
+        namespace="",
+        package="rclcpp_components",
+        executable="component_container",
+        composable_node_descriptions=[
+            ComposableNode(
+                package="px4_gz_application",
+                plugin="px4_gz::rivz_mesh_loader",
+                name="rivz_mesh_loader",
+            )
+        ],
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             gz_sim,  # simulator
             tf_static_node,  # lidar frame id translate
             cmd_px4,  # px4 controller
             bridge,  # gz <-> ros2 bridge
+            container,
         ]
     )
