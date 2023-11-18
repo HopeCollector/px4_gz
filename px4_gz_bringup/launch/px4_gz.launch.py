@@ -71,8 +71,8 @@ def generate_launch_description():
             "0",
             "0",
             "0",
-            "x500_lidar/lidar_3d_v1/link",
-            "x500_lidar/lidar_3d_v1/link/gpu_lidar",
+            "x500_lidar/link",
+            "x500_lidar/link/gpu_lidar",
         ],
         output="screen",
     )
@@ -95,8 +95,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             gz_sim,  # simulator
+            tf_static_node,  # lidar frame id translate
             cmd_px4,  # px4 controller
             bridge,  # gz <-> ros2 bridge
-            tf_static_node,  # lidar frame id translate
         ]
     )
