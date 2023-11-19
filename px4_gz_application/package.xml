@@ -15,7 +15,7 @@
   <depend>visualization_msgs</depend>
   <depend>rclcpp_components</depend>
   <depend>tf2_ros</depend>
-  <depend>yalantinglibs</depend>
+  <depend>yaLanTingLibs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
 
