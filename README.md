@@ -8,83 +8,40 @@ px4 在 ros2-gazebo 下的仿真配置与相关实现
 - gz garden (注意区分 gazebo classic 和 gazebo，这俩不是一个东西)
 - ros2 humble
 
+### 可视化相关
+- [yalantinglibs](https://github.com/alibaba/yalantinglibs.git)
+- [ros_gz](https://github.com/gazebosim/ros_gz.git)
+
+### PX4 相关
+- [Micro-XRCE-DDS-Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent.git)
+- [px4_msgs](https://github.com/PX4/px4_msgs.git)
+
+### 编译方法
+
+编译方法更常规的 colcon 工作空间编译基本一致，只是有了 `ros_gz` 需要配置一个环境变量才行
+
+```sehll
+GZ_VERSION=garden colcon build --symlink-install
+```
+
 ## 文件结构
 
 - `description` : 模型文件 urdf 或者 sdf
-- `gazebo` : gazebo 相关的代码和配置，一般都是些插件什么的 (暂时不需要)
+- `gazebo` : gazebo 相关的代码和配置，一般都是些插件什么的
 - `application` : ros2 相关的代码和配置
 - `bringup` : launch 文件与一些小工具
 
-# ros_gz_project_template
-A template project integrating ROS 2 and Gazebo simulator.
 
-## Included packages
+## 启动方法
 
-* `ros_gz_example_description` - holds the sdf description of the simulated system and any other assets.
+在启动仿真之前，需要先编译出 px4_sitl 的固件，具体方法可参见 px4 v1.14.0 的官方文档
 
-* `ros_gz_example_gazebo` - holds gazebo specific code and configurations. Namely this is where systems end up.
+然后修改 `px4_gz_bringup/config/launch_px4.sh` 中 px4 可执行文件的路径
 
-* `ros_gz_example_application` - holds ros2 specific code and configurations.
+完成上面两步后，可以按照下面的启动仿真
 
-* `ros_gz_example_bringup` - holds launch files and high level utilities.
-
-
-## Install
-### Requirements
-
-1. Choose a ROS and Gazebo combination  https://gazebosim.org/docs/harmonic/ros_installation
-   Note: If you're using a specific and unsupported Gazebo version with ROS 2, you might need to set the `GZ_VERSION` environment variable, for example:
-
-    ```bash
-    export GZ_VERSION=garden
-    ```
-
-1. Install necessary tools
-
-    ```bash
-    sudo apt install python3-vcstool python3-colcon-common-extensions git wget
-    ```
-
-### Use as template
-Directly `Use this template` and create your project repository on Github.
-
-Or start by creating a workspace and cloning the template repository:
-
-   ```bash
-   mkdir -p ~/template_ws/src
-   cd ~/template_ws/src
-   wget https://raw.githubusercontent.com/gazebosim/ros_gz_project_template/main/template_workspace.yaml
-   vcs import < template_workspace.yaml
-   ```
-
-## Usage
-
-1. Install dependencies
-
-    ```bash
-    cd ~/template_ws
-    source /opt/ros/<ROS_DISTRO>/setup.bash
-    sudo rosdep init
-    rosdep update
-    rosdep install --from-paths src --ignore-src -r -i -y --rosdistro <ROS_DISTRO>
-    ```
-
-1. Build the project
-
-    ```bash
-    colcon build --cmake-args -DBUILD_TESTING=ON
-    ```
-
-1. Source the workspace
-
-    ```bash
-    . ~/template_ws/install/setup.sh
-    ```
-
-1. Launch the simulation
-
-    ```bash
-    ros2 launch ros_gz_example_bringup diff_drive.launch.py
-    ```
-
-For a more detailed guide on using this template see [documentation](https://gazebosim.org/docs/latest/ros_gz_project_template_guide).
+```shell
+export GZ_SIM_RESOURCE_PATH=<path_to_px4_source>/Tools/simulation/gz/models:<path_to_px4_source>/Tools/simulation/gz/worlds:$GZ_SIM_RESOURCE_PATH
+source <path_to_ros2_workspace>/install/setup.bash
+ros2 launch px4_gz_bringup px4_gz.launch.py
+```
