@@ -34,11 +34,19 @@ def generate_launch_description():
     pkg_ros_gz_sim = FindPackageShare("ros_gz_sim")
 
     # start px4 controller
-    cmd_px4 = ExecuteProcess(
+    px4_controller = ExecuteProcess(
         cmd=[
             "bash",
             PathJoinSubstitution([pkg_project_bringup, "config", "launch_px4.sh"]),
         ],
+        name="px4_controller",
+        output="screen",
+    )
+
+    # microdds
+    px4_bridge = ExecuteProcess(
+        cmd=["MicroXRCEAgent", "udp4", "-p", "8888"],
+        name="px4_bridge",
         output="screen",
     )
 
@@ -60,9 +68,10 @@ def generate_launch_description():
     )
 
     # Bridge ROS topics and Gazebo messages for establishing communication
-    bridge = Node(
+    gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
+        name="gz_bridge",
         parameters=[
             {
                 "config_file": PathJoinSubstitution(
@@ -76,7 +85,7 @@ def generate_launch_description():
 
     # container for mesh loader
     container = ComposableNodeContainer(
-        name="px4_gz",
+        name="px4_gz_app_container",
         namespace="",
         package="rclcpp_components",
         executable="component_container",
@@ -101,8 +110,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             gz_sim,  # simulator
-            bridge,  # gz <-> ros2 bridge
+            gz_bridge,  # gz <-> ros2 bridge
             container,  # visualization helper
-            cmd_px4,  # px4 controller
+            px4_controller,  # px4 controller
+            px4_bridge,  # px4 <-> ros2 bridge
         ]
     )
