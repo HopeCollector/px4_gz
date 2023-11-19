@@ -85,7 +85,14 @@ def generate_launch_description():
                 package="px4_gz_application",
                 plugin="px4_gz::visualization_helper",
                 name="visualization_helper",
-                parameters=[{"use_sim_time": True}],
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "world_file_path": PathJoinSubstitution(
+                            [pkg_project_gazebo, "worlds", "px4_gz.yaml"]
+                        ),
+                    }
+                ],
             )
         ],
         output="screen",
@@ -95,7 +102,7 @@ def generate_launch_description():
         [
             gz_sim,  # simulator
             bridge,  # gz <-> ros2 bridge
-            container, # visualization helper
+            container,  # visualization helper
             cmd_px4,  # px4 controller
         ]
     )

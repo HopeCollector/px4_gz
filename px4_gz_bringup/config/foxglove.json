@@ -1,0 +1,172 @@
+{
+  "configById": {
+    "3D!q689ho": {
+      "cameraState": {
+        "perspective": true,
+        "distance": 35.16173831811799,
+        "phi": 73.29772701814878,
+        "thetaOffset": 57.14234352278825,
+        "targetOffset": [
+          8.289920072803735,
+          0.8625818279806851,
+          -2.1495686470961093e-15
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-position",
+      "scene": {
+        "transforms": {
+          "showLabel": true,
+          "editable": true
+        },
+        "backgroundColor": "#545252",
+        "enableStats": true,
+        "ignoreColladaUpAxis": true
+      },
+      "transforms": {
+        "frame:x500_lidar/lidar_3d_v1": {
+          "visible": false
+        },
+        "frame:x500_lidar/lidar_3d_v1/link": {
+          "visible": false
+        },
+        "frame:x500_lidar/lidar_3d_v1/link/gpu_lidar": {
+          "visible": false
+        },
+        "frame:x500_lidar/rotor_3": {
+          "visible": false
+        },
+        "frame:x500_lidar/rotor_2": {
+          "visible": false
+        },
+        "frame:x500_lidar/rotor_1": {
+          "visible": false
+        },
+        "frame:x500_lidar/rotor_0": {
+          "visible": false
+        },
+        "frame:x500_lidar/base_link": {
+          "visible": false
+        },
+        "frame:x500_lidar/link/gpu_lidar": {
+          "visible": false
+        },
+        "frame:x500_lidar/link": {
+          "visible": false
+        }
+      },
+      "topics": {
+        "/x500_lidar/point_cloud": {
+          "visible": true,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo",
+          "pointSize": 3,
+          "explicitAlpha": 0.3,
+          "decayTime": 10,
+          "minValue": -1,
+          "maxValue": 5
+        },
+        "/pub/drone": {
+          "visible": true,
+          "color": "#ff0000ff"
+        },
+        "/pub/world": {
+          "visible": true,
+          "showOutlines": false,
+          "color": "#5d705aff"
+        }
+      },
+      "layers": {
+        "b253ceaf-6a48-4259-ab18-e78b3bca2f6f": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "b253ceaf-6a48-4259-ab18-e78b3bca2f6f",
+          "layerId": "foxglove.Grid",
+          "frameId": "odom",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#248eff",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {},
+      "followTf": "x500_lidar"
+    },
+    "RawMessages!ahl20a": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/tf_static",
+      "expansion": {
+        "transforms": "e",
+        "0~transforms": "e",
+        "header~0~transforms": "e",
+        "stamp~header~0~transforms": "e",
+        "transform~0~transforms": "c",
+        "translation~transform~0~transforms": "e",
+        "rotation~transform~0~transforms": "e",
+        "1~transforms": "e",
+        "header~1~transforms": "e",
+        "stamp~header~1~transforms": "e",
+        "transform~1~transforms": "c",
+        "translation~transform~1~transforms": "e",
+        "rotation~transform~1~transforms": "e"
+      }
+    },
+    "Tab!2d3xmb": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "1",
+          "layout": "3D!q689ho"
+        },
+        {
+          "title": "2",
+          "layout": "RawMessages!ahl20a"
+        }
+      ]
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": "Tab!2d3xmb"
+}
