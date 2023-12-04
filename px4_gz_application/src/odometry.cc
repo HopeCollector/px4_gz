@@ -76,8 +76,10 @@ private:
         msg->velocity[2];
     cur_pose_.angle_vel << msg->angular_velocity[0], msg->angular_velocity[1],
         msg->angular_velocity[2];
-    cur_pose_.linear_vel = T_odomned_odomflu_ * cur_pose_.linear_vel;
-    cur_pose_.angle_vel = T_odomned_odomflu_ * cur_pose_.angle_vel;
+    cur_pose_.linear_vel = cur_pose_.orientation.conjugate() * T_odomned_odomflu_ *
+                           cur_pose_.linear_vel;
+    cur_pose_.angle_vel =
+        cur_pose_.orientation.conjugate() * T_odomned_odomflu_ * cur_pose_.angle_vel;
     cur_pose_.stamp = msg->timestamp * 1000; // us -> ns
     publish_odom_msg();
   }
