@@ -22,7 +22,7 @@ from launch.substitutions import (
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
-
+from launch_ros.actions import PushRosNamespace
 
 def generate_launch_description():
     # Configure ROS nodes for launch
@@ -86,7 +86,7 @@ def generate_launch_description():
     # container for mesh loader
     container = ComposableNodeContainer(
         name="px4_gz_app_container",
-        namespace="",
+        namespace="px4_gz",
         package="rclcpp_components",
         executable="component_container",
         composable_node_descriptions=[
@@ -102,7 +102,22 @@ def generate_launch_description():
                         ),
                     }
                 ],
-            )
+            ),
+            ComposableNode(
+                package="px4_gz_application",
+                plugin="px4_gz::odometry",
+                name="odometry",
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "odom_frame_id": "odom",
+                        "base_link_frame_id": "x500_lidar/base_link",
+                    }
+                ],
+                remappings=[
+                    ("pub/odom", "odom"),
+                ]
+            ),
         ],
         output="screen",
     )
@@ -111,8 +126,9 @@ def generate_launch_description():
         [
             gz_sim,  # simulator
             gz_bridge,  # gz <-> ros2 bridge
-            container,  # visualization helper
             px4_controller,  # px4 controller
             px4_bridge,  # px4 <-> ros2 bridge
+            PushRosNamespace("px4_gz"),  # push namespace to all nodes in this launch file
+            container,  # visualization helper
         ]
     )

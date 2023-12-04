@@ -16,4 +16,9 @@ rclcpp_components_register_nodes(visualization_helper_component
   "px4_gz::visualization_helper"
 )
 
+ament_auto_add_library(odometry_component SHARED src/odometry.cc)
+rclcpp_components_register_nodes(odometry_component
+  "px4_gz::odometry"
+)
+
 ament_auto_package()
