@@ -42,9 +42,10 @@ private:
     sub_vehicle_odometry_ = create_subscription<px4_msgs::msg::VehicleOdometry>(
         "/fmu/out/vehicle_odometry", rclcpp::SensorDataQoS(),
         std::bind(&odometry::cb_px4_odometry, this, _1));
-    timer_once_1s_ = create_wall_timer(1s, [this]() {
-      this->timer_once_1s_->cancel();
-      double yaw = quaternion_to_yaw(this->cur_pose_.orientation);
+    timer_once_10s_ = create_wall_timer(10s, [this]() {
+      this->timer_once_10s_->cancel();
+      double yaw = quaternion_to_yaw(Eigen::Quaterniond(
+          last_msg_->q[0], last_msg_->q[1], last_msg_->q[2], last_msg_->q[3]));
       this->T_odomflu_odomned_.linear() =
           Eigen::Matrix3d(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
                           Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()));
@@ -69,6 +70,7 @@ private:
     //     T_odomned_odomflu_ * T_localfrd_odomned * T_localflu_localfrd_;
     // cur_pose_.position = T_localflu_odomflu.translation();
     // cur_pose_.orientation = T_localflu_odomflu.linear();
+    last_msg_ = msg;
     upate_position_orientation();
     cur_pose_.linear_vel << msg->velocity[0], msg->velocity[1],
         msg->velocity[2];
@@ -128,7 +130,7 @@ private:
   rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr
       sub_vehicle_odometry_ = nullptr;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_ = nullptr;
-  rclcpp::TimerBase::SharedPtr timer_once_1s_ = nullptr;
+  rclcpp::TimerBase::SharedPtr timer_once_10s_ = nullptr;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = nullptr;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = nullptr;
   std::string odom_frame_id_;
@@ -138,6 +140,7 @@ private:
   Eigen::Affine3d T_localflu_localfrd_ = Eigen::Affine3d::Identity();
   Eigen::Affine3d T_localfrd_localflu_ = Eigen::Affine3d::Identity();
   px4_pose cur_pose_;
+  px4_msgs::msg::VehicleOdometry::ConstSharedPtr last_msg_ = nullptr;
 };
 }; // namespace px4_gz
 
