@@ -6,6 +6,9 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <ylt/struct_yaml/yaml_reader.h>
+#include <nav_msgs/msg/odometry.hpp>
+
+constexpr double ARROW_MAX_LEN = 1.0;
 
 namespace px4_gz {
 struct mesh_t {
@@ -31,13 +34,18 @@ public:
       : Node("visualization_helper", options) {
     pub_drone_ =
         create_publisher<visualization_msgs::msg::Marker>("pub/drone", 5);
+    pub_velocity_ =
+        create_publisher<visualization_msgs::msg::Marker>("pub/velocity", 5);
     pub_world_ =
         create_publisher<visualization_msgs::msg::MarkerArray>("pub/world", 5);
     tf_static_pub_ =
         std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     using namespace std::chrono_literals;
-    timer_50hz_ = create_wall_timer(20ms, [this]() { this->callback_50hz(); });
-    timer_1hz_ = create_wall_timer(1s, [this]() { this->callback_1hz(); });
+    using namespace std::placeholders;
+    sub_odom_ = create_subscription<nav_msgs::msg::Odometry>(
+        "sub/odom", 5, std::bind(&visualization_helper::cb_odom, this, _1));
+    timer_50hz_ = create_wall_timer(20ms, std::bind(&visualization_helper::callback_50hz, this));
+    timer_1hz_ = create_wall_timer(1s, std::bind(&visualization_helper::callback_1hz, this));
 
     declare_parameter("world_file_path", "");
     get_parameter("world_file_path", world_file_path_);
@@ -45,6 +53,38 @@ public:
   }
 
 private:
+  void cb_odom(nav_msgs::msg::Odometry::ConstSharedPtr msg) {
+    visualization_msgs::msg::Marker vel_msg;
+    vel_msg.header.stamp = msg->header.stamp;
+    vel_msg.header.frame_id = msg->child_frame_id;
+    vel_msg.ns = "px4_gz";
+    vel_msg.id = 0;
+    vel_msg.type = visualization_msgs::msg::Marker::ARROW;
+    vel_msg.action = visualization_msgs::msg::Marker::ADD;
+    vel_msg.points.resize(2);
+    auto &start_point = vel_msg.points[0];
+    auto &end_point = vel_msg.points[1];
+    start_point.x = 0;
+    start_point.y = 0;
+    start_point.z = 0;
+    double speed =
+        std::sqrt(msg->twist.twist.linear.x * msg->twist.twist.linear.x +
+                  msg->twist.twist.linear.y * msg->twist.twist.linear.y +
+                  msg->twist.twist.linear.z * msg->twist.twist.linear.z);
+    double scale = std::min(speed, ARROW_MAX_LEN);
+    end_point.x = msg->twist.twist.linear.x / speed * scale;
+    end_point.y = msg->twist.twist.linear.y / speed * scale;
+    end_point.z = msg->twist.twist.linear.z / speed * scale;
+    vel_msg.scale.x = 0.1 * scale;
+    vel_msg.scale.y = 0.2 * scale;
+    vel_msg.scale.z = 0.2 * scale;
+    vel_msg.color.a = 1.0;
+    vel_msg.color.r = 1.0;
+    vel_msg.color.g = 1.0;
+    vel_msg.color.b = 0.0;
+    pub_velocity_->publish(vel_msg);
+  }
+
   void callback_50hz() { pub_drone_msg(); }
 
   void callback_1hz() {
@@ -73,7 +113,7 @@ private:
           "simulation/gz/models/x500/meshes/NXP-HGD-CF.dae",
           {0, 0, 0, 1, 0, 0, 0});
       drone_msg.header.frame_id = "x500_lidar/base_link";
-      drone_msg.id = 0;
+      drone_msg.id = 1;
       is_created_msg = true;
     }
     drone_msg.header.stamp = get_clock()->now();
@@ -84,7 +124,7 @@ private:
     static bool is_created_msg = false;
     static visualization_msgs::msg::MarkerArray world_msg;
     if (!is_created_msg) {
-      int id = 1;
+      int id = 2;
       std::ifstream ifs(world_file_path_);
       std::string content((std::istreambuf_iterator<char>(ifs)),
                           (std::istreambuf_iterator<char>()));
@@ -128,7 +168,9 @@ private:
   }
 
 private:
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_drone_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_velocity_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_world_;
   rclcpp::TimerBase::SharedPtr timer_50hz_;
   rclcpp::TimerBase::SharedPtr timer_1hz_;

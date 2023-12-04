@@ -24,6 +24,7 @@ from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import PushRosNamespace
 
+
 def generate_launch_description():
     # Configure ROS nodes for launch
 
@@ -102,6 +103,9 @@ def generate_launch_description():
                         ),
                     }
                 ],
+                remappings=[
+                    ("sub/odom", "odom"),
+                ],
             ),
             ComposableNode(
                 package="px4_gz_application",
@@ -116,7 +120,7 @@ def generate_launch_description():
                 ],
                 remappings=[
                     ("pub/odom", "odom"),
-                ]
+                ],
             ),
         ],
         output="screen",
@@ -128,7 +132,9 @@ def generate_launch_description():
             gz_bridge,  # gz <-> ros2 bridge
             px4_controller,  # px4 controller
             px4_bridge,  # px4 <-> ros2 bridge
-            PushRosNamespace("px4_gz"),  # push namespace to all nodes in this launch file
+            PushRosNamespace(
+                "px4_gz"
+            ),  # push namespace to all nodes in this launch file
             container,  # visualization helper
         ]
     )
