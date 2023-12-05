@@ -101,6 +101,7 @@ def generate_launch_description():
                         "world_file_path": PathJoinSubstitution(
                             [pkg_project_gazebo, "worlds", "px4_gz.yaml"]
                         ),
+                        "odom_frame_id": "odom_ned",
                     }
                 ],
                 remappings=[
