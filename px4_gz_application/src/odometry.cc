@@ -4,6 +4,8 @@
 #include <px4_msgs/msg/vehicle_odometry.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 namespace px4_gz {
 struct px4_pose {
@@ -23,7 +25,8 @@ class odometry : public rclcpp::Node {
 public:
   explicit odometry(const rclcpp::NodeOptions &options)
       : Node("odometry", options) {
-    pub_odom_ = create_publisher<nav_msgs::msg::Odometry>("pub/odom", 10);
+    pub_odom_ = create_publisher<px4_msgs::msg::VehicleOdometry>("pub/odom", 10);
+    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     load_param();
@@ -34,6 +37,7 @@ private:
   void load_param() {
     odom_frame_id_ = declare_parameter("odom_frame_id", "odom");
     base_link_frame_id_ = declare_parameter("base_link_frame_id", "base_link");
+    declare_parameter("yaw_frd_ned", 0.0);
   }
 
   void init_callback() {
@@ -53,6 +57,9 @@ private:
       this->T_localflu_localfrd_.linear() =
           Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()).toRotationMatrix();
       this->T_localfrd_localflu_ = this->T_localflu_localfrd_.inverse();
+      this->set_parameter({"yaw_frd_ned", yaw});
+      this->timer_1hz_ =
+          this->create_wall_timer(1s, std::bind(&odometry::cb_1hz, this));
       RCLCPP_INFO_STREAM(
           get_logger(),
           "detect init yaw(degree) in odom_ned frame: " << yaw / M_PI * 180.0);
@@ -60,37 +67,19 @@ private:
   }
 
   void cb_px4_odometry(px4_msgs::msg::VehicleOdometry::ConstSharedPtr msg) {
-    // Eigen::Affine3d T_localfrd_odomned = Eigen::Affine3d::Identity();
-    // T_localfrd_odomned.translation() << msg->position[0], msg->position[1],
-    //     msg->position[2];
-    // T_localfrd_odomned.linear() =
-    //     Eigen::Quaterniond(msg->q[0], msg->q[1], msg->q[2], msg->q[3])
-    //         .toRotationMatrix();
-    // Eigen::Affine3d T_localflu_odomflu =
-    //     T_odomned_odomflu_ * T_localfrd_odomned * T_localflu_localfrd_;
-    // cur_pose_.position = T_localflu_odomflu.translation();
-    // cur_pose_.orientation = T_localflu_odomflu.linear();
     last_msg_ = msg;
-    upate_position_orientation();
-    cur_pose_.linear_vel << msg->velocity[0], msg->velocity[1],
-        msg->velocity[2];
-    cur_pose_.angle_vel << msg->angular_velocity[0], msg->angular_velocity[1],
-        msg->angular_velocity[2];
-    cur_pose_.linear_vel = cur_pose_.orientation.conjugate() * T_odomned_odomflu_ *
-                           cur_pose_.linear_vel;
-    cur_pose_.angle_vel =
-        cur_pose_.orientation.conjugate() * T_odomned_odomflu_ * cur_pose_.angle_vel;
-    cur_pose_.stamp = msg->timestamp * 1000; // us -> ns
-    publish_odom_msg();
+    px4_msgs::msg::VehicleOdometry new_msg = *msg;
+    upate_position_orientation(new_msg);
+    pub_odom_->publish(new_msg);
   }
 
-  void upate_position_orientation() {
-    static geometry_msgs::msg::TransformStamped transform;
+  void upate_position_orientation(px4_msgs::msg::VehicleOdometry &msg) {
     static rclcpp::Rate rate(1);
+    static Eigen::Isometry3d T_localflu_odomflu;
     do {
       try {
-        transform = tf_buffer_->lookupTransform(
-            odom_frame_id_, base_link_frame_id_, tf2::TimePointZero);
+        T_localflu_odomflu = tf2::transformToEigen(tf_buffer_->lookupTransform(
+            odom_frame_id_, base_link_frame_id_, tf2::TimePointZero));
         break;
       } catch (tf2::TransformException &ex) {
         RCLCPP_WARN_STREAM(this->get_logger(), "waiting for transform from "
@@ -98,51 +87,46 @@ private:
                                                    << " to " << odom_frame_id_);
       }
     } while (rate.sleep());
-    cur_pose_.position[0] = transform.transform.translation.x;
-    cur_pose_.position[1] = transform.transform.translation.y;
-    cur_pose_.position[2] = transform.transform.translation.z;
-    cur_pose_.orientation.w() = transform.transform.rotation.w;
-    cur_pose_.orientation.x() = transform.transform.rotation.x;
-    cur_pose_.orientation.y() = transform.transform.rotation.y;
-    cur_pose_.orientation.z() = transform.transform.rotation.z;
+    auto T_localfrd_odomned = T_odomflu_odomned_ * T_localflu_odomflu * T_localfrd_localflu_;
+    auto p = T_localfrd_odomned.translation().cast<float>();
+    Eigen::Quaternionf q(T_localfrd_odomned.linear().cast<float>());
+    msg.position = {p.x(), p.y(), p.z()};
+    msg.q = {q.w(), q.x(), q.y(), q.z()};
   }
 
-  void publish_odom_msg() {
-    nav_msgs::msg::Odometry odom;
-    odom.header.stamp = get_clock()->now();
-    odom.header.frame_id = odom_frame_id_;
-    odom.child_frame_id = base_link_frame_id_;
-    odom.pose.pose.position.x = cur_pose_.position[0];
-    odom.pose.pose.position.y = cur_pose_.position[1];
-    odom.pose.pose.position.z = cur_pose_.position[2];
-    odom.pose.pose.orientation.w = cur_pose_.orientation.w();
-    odom.pose.pose.orientation.x = cur_pose_.orientation.x();
-    odom.pose.pose.orientation.y = cur_pose_.orientation.y();
-    odom.pose.pose.orientation.z = cur_pose_.orientation.z();
-    odom.twist.twist.linear.x = cur_pose_.linear_vel[0];
-    odom.twist.twist.linear.y = cur_pose_.linear_vel[1];
-    odom.twist.twist.linear.z = cur_pose_.linear_vel[2];
-    odom.twist.twist.angular.x = cur_pose_.angle_vel[0];
-    odom.twist.twist.angular.y = cur_pose_.angle_vel[1];
-    odom.twist.twist.angular.z = cur_pose_.angle_vel[2];
-    pub_odom_->publish(odom);
+  void cb_1hz() {
+    geometry_msgs::msg::TransformStamped msg;
+    msg.header.stamp = get_clock()->now();
+    msg.transform.translation = tf2::toMsg2(T_odomned_odomflu_.translation());
+    msg.transform.rotation = tf2::toMsg(Eigen::Quaterniond{T_odomned_odomflu_.rotation()});
+    msg.header.frame_id = odom_frame_id_;
+    msg.child_frame_id = odom_frame_id_ + "_ned";
+    tf_static_broadcaster_->sendTransform(msg);
+
+    msg.transform.translation = tf2::toMsg2(T_localfrd_localflu_.translation());
+    msg.transform.rotation = tf2::toMsg(Eigen::Quaterniond{T_localfrd_localflu_.rotation()});
+    msg.header.frame_id = base_link_frame_id_;
+    msg.child_frame_id = base_link_frame_id_ + "_frd";
+    tf_static_broadcaster_->sendTransform(msg);
   }
 
 private:
   rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr
       sub_vehicle_odometry_ = nullptr;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_ = nullptr;
+  rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr pub_odom_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_once_10s_ = nullptr;
+  rclcpp::TimerBase::SharedPtr timer_1hz_ = nullptr;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = nullptr;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = nullptr;
   std::string odom_frame_id_;
   std::string base_link_frame_id_;
-  Eigen::Affine3d T_odomflu_odomned_ = Eigen::Affine3d::Identity();
-  Eigen::Affine3d T_odomned_odomflu_ = Eigen::Affine3d::Identity();
-  Eigen::Affine3d T_localflu_localfrd_ = Eigen::Affine3d::Identity();
-  Eigen::Affine3d T_localfrd_localflu_ = Eigen::Affine3d::Identity();
+  Eigen::Isometry3d T_odomflu_odomned_ = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T_odomned_odomflu_ = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T_localflu_localfrd_ = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T_localfrd_localflu_ = Eigen::Isometry3d::Identity();
   px4_pose cur_pose_;
   px4_msgs::msg::VehicleOdometry::ConstSharedPtr last_msg_ = nullptr;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_ = nullptr;
 };
 }; // namespace px4_gz
 
