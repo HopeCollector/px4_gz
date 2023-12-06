@@ -86,8 +86,8 @@ def generate_launch_description():
 
     # container for mesh loader
     container = ComposableNodeContainer(
-        name="px4_gz_app_container",
-        namespace="px4_gz",
+        name="container",
+        namespace="",
         package="rclcpp_components",
         executable="component_container",
         composable_node_descriptions=[
