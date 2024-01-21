@@ -43,7 +43,7 @@ public:
         std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     using namespace std::chrono_literals;
     using namespace std::placeholders;
-    sub_odom_ = create_subscription<px4_msgs::msg::VehicleOdometry>(
+    sub_odom_ = create_subscription<nav_msgs::msg::Odometry>(
         "sub/odom", 5, std::bind(&visualization_helper::cb_odom, this, _1));
     timer_50hz_ = create_wall_timer(20ms, std::bind(&visualization_helper::callback_50hz, this));
     timer_1hz_ = create_wall_timer(1s, std::bind(&visualization_helper::callback_1hz, this));
@@ -54,10 +54,10 @@ public:
   }
 
 private:
-  void cb_odom(px4_msgs::msg::VehicleOdometry::ConstSharedPtr msg) {
+  void cb_odom(nav_msgs::msg::Odometry::ConstSharedPtr msg) {
     visualization_msgs::msg::Marker vel_msg;
     vel_msg.header.stamp = get_clock()->now();
-    vel_msg.header.frame_id = odom_frame_id_;
+    vel_msg.header.frame_id = msg->child_frame_id;
     vel_msg.ns = "px4_gz";
     vel_msg.id = 0;
     vel_msg.type = visualization_msgs::msg::Marker::ARROW;
@@ -65,18 +65,15 @@ private:
     vel_msg.points.resize(2);
     auto &start_point = vel_msg.points[0];
     auto &end_point = vel_msg.points[1];
-    start_point.x = msg->position[0];
-    start_point.y = msg->position[1];
-    start_point.z = msg->position[2];
-    end_point = start_point;
-    double speed =
-        std::sqrt(msg->velocity[0] * msg->velocity[0] +
-                  msg->velocity[1] * msg->velocity[1] +
-                  msg->velocity[2] * msg->velocity[2]);
+    start_point.x = 0.0;
+    start_point.y = 0.0;
+    start_point.z = 0.0;
+    auto & lvel = msg->twist.twist.linear;
+    double speed = std::sqrt(lvel.x * lvel.x + lvel.y * lvel.y + lvel.z * lvel.z);
     double scale = std::min(speed, ARROW_MAX_LEN);
-    end_point.x += msg->velocity[0] / speed * scale;
-    end_point.y += msg->velocity[1] / speed * scale;
-    end_point.z += msg->velocity[2] / speed * scale;
+    end_point.x = lvel.x / speed * scale;
+    end_point.y = lvel.y / speed * scale;
+    end_point.z = lvel.z / speed * scale;
     vel_msg.scale.x = 0.1 * scale;
     vel_msg.scale.y = 0.2 * scale;
     vel_msg.scale.z = 0.2 * scale;
@@ -111,7 +108,7 @@ private:
     static visualization_msgs::msg::Marker drone_msg;
     if (!is_created_msg) {
       drone_msg = create_mesh_msg(
-          "https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/Tools/"
+          "https://raw.githubusercontent.com/PX4/PX4-Autopilot/v1.14.0/Tools/"
           "simulation/gz/models/x500/meshes/NXP-HGD-CF.dae",
           {0, 0, 0, 1, 0, 0, 0});
       drone_msg.header.frame_id = "x500_lidar/base_link";
@@ -170,7 +167,7 @@ private:
   }
 
 private:
-  rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr sub_odom_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_drone_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_velocity_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_world_;
