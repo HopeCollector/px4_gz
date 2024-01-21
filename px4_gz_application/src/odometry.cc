@@ -25,7 +25,7 @@ class odometry : public rclcpp::Node {
 public:
   explicit odometry(const rclcpp::NodeOptions &options)
       : Node("odometry", options) {
-    pub_odom_ = create_publisher<px4_msgs::msg::VehicleOdometry>("pub/odom", 10);
+    pub_odom_ = create_publisher<nav_msgs::msg::Odometry>("pub/odom", 10);
     tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -68,12 +68,40 @@ private:
 
   void cb_px4_odometry(px4_msgs::msg::VehicleOdometry::ConstSharedPtr msg) {
     last_msg_ = msg;
-    px4_msgs::msg::VehicleOdometry new_msg = *msg;
-    upate_position_orientation(new_msg);
-    pub_odom_->publish(new_msg);
+    auto T_localflu_odomflu = get_transform();
+    const auto &p = T_localflu_odomflu.translation();
+    Eigen::Quaterniond q(T_localflu_odomflu.linear());
+    Eigen::Quaterniond q_odomned_localflu(q.conjugate() *
+                                          T_odomned_odomflu_.linear());
+    Eigen::Vector3d linear_vel =
+        q_odomned_localflu *
+        Eigen::Vector3d(msg->velocity[0], msg->velocity[1], msg->velocity[2]);
+    Eigen::Vector3d angle_vel =
+        q_odomned_localflu * Eigen::Vector3d(msg->angular_velocity[0],
+                                             msg->angular_velocity[1],
+                                             msg->angular_velocity[2]);
+
+    nav_msgs::msg::Odometry odom_msg;
+    odom_msg.header.stamp = get_clock()->now();
+    odom_msg.header.frame_id = odom_frame_id_;
+    odom_msg.child_frame_id = base_link_frame_id_;
+    odom_msg.pose.pose.position.x = p[0];
+    odom_msg.pose.pose.position.y = p[1];
+    odom_msg.pose.pose.position.z = p[2];
+    odom_msg.pose.pose.orientation.x = q.x();
+    odom_msg.pose.pose.orientation.y = q.y();
+    odom_msg.pose.pose.orientation.z = q.z();
+    odom_msg.pose.pose.orientation.w = q.w();
+    odom_msg.twist.twist.linear.x = linear_vel[0];
+    odom_msg.twist.twist.linear.y = linear_vel[1];
+    odom_msg.twist.twist.linear.z = linear_vel[2];
+    odom_msg.twist.twist.angular.x = angle_vel[0];
+    odom_msg.twist.twist.angular.y = angle_vel[1];
+    odom_msg.twist.twist.angular.z = angle_vel[2];
+    pub_odom_->publish(odom_msg);
   }
 
-  void upate_position_orientation(px4_msgs::msg::VehicleOdometry &msg) {
+  Eigen::Isometry3d get_transform() {
     static rclcpp::Rate rate(1);
     static Eigen::Isometry3d T_localflu_odomflu;
     do {
@@ -87,11 +115,7 @@ private:
                                                    << " to " << odom_frame_id_);
       }
     } while (rate.sleep());
-    auto T_localfrd_odomned = T_odomflu_odomned_ * T_localflu_odomflu * T_localfrd_localflu_;
-    auto p = T_localfrd_odomned.translation().cast<float>();
-    Eigen::Quaternionf q(T_localfrd_odomned.linear().cast<float>());
-    msg.position = {p.x(), p.y(), p.z()};
-    msg.q = {q.w(), q.x(), q.y(), q.z()};
+    return T_localflu_odomflu;
   }
 
   void cb_1hz() {
@@ -113,7 +137,7 @@ private:
 private:
   rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr
       sub_vehicle_odometry_ = nullptr;
-  rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr pub_odom_ = nullptr;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_once_10s_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_1hz_ = nullptr;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = nullptr;
